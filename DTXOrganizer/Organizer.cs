@@ -24,6 +24,9 @@ namespace DTXOrganizer {
                         if (defFile.ProperlyInitialized) {
 //                            Logger.Instance.LogInfo(defFile.Title);
 //                            defFile.LogDTXLevels();
+                            if (!Path.GetFileName(Path.GetFileName(defFile.FilePath)).Equals(defFile.Title)) {
+                                defFile.RenameSongFolderToTitle();
+                            }
                         }
 
                         break;

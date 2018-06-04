@@ -10,7 +10,7 @@ namespace DTXOrganizer {
 
         public bool ProperlyInitialized { get; protected set; }
         
-        public string FilePath { get; }
+        public string FilePath { get; private set; }
         protected string rawValue;
         
         public string Title { get; protected set; }
@@ -37,7 +37,7 @@ namespace DTXOrganizer {
 
                 ProperlyInitialized = true;
                 TryGetValueForProperty(TITLE_PROPERTY, out string title);
-                Title = title;
+                Title = title.Trim();
 
             } catch (Exception e) {
                 if (e is FileNotFoundException) {
@@ -57,7 +57,7 @@ namespace DTXOrganizer {
             FilePath = path;
             Title = title;
             ProperlyInitialized = false;
-            rawValue = ";; File created with Jere's DTXOrganizer\r\n\r\n" +
+            rawValue = "; File created with Jere's DTXOrganizer\r\n\r\n" +
                        TITLE_PROPERTY + ": " + title + "\r\n";
 
             try {
@@ -67,6 +67,46 @@ namespace DTXOrganizer {
                 Logger.Instance.LogError("Couldn't create file for song '" + title + "' in '" + path + "'");
                 Logger.Instance.LogError(e.ToString());
             }
+        }
+
+        public virtual bool RenameSongFolderToTitle() {
+            if (!ProperlyInitialized) {
+                return false;
+            }
+
+            string newDirName = Title;
+            
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            int indexOfInvalidChars = newDirName.IndexOfAny(invalidChars);
+            while (indexOfInvalidChars != -1) {
+                newDirName = newDirName.Remove(indexOfInvalidChars, 1);
+                indexOfInvalidChars = newDirName.IndexOfAny(invalidChars);
+            }
+
+            newDirName = newDirName.TrimEnd('.');
+            
+            // If names are already the same, then bail
+            if (Path.GetFileName(Path.GetDirectoryName(FilePath)).Equals(newDirName)) {
+                return true;
+            }
+            
+            string oldDirectoryName = Path.GetDirectoryName(FilePath);
+            string newDirectoryName =
+                Path.Combine(new[] {Path.GetDirectoryName(Path.GetDirectoryName(FilePath)), newDirName});
+            
+            if (oldDirectoryName == null) {
+                Logger.Instance.LogError("Couldn't get '" + Title + "' directory to rename it. Path: '" + FilePath +
+                                         "'.");
+                return false;
+            }
+            
+            Directory.Move(oldDirectoryName, newDirectoryName);
+            FilePath = Path.Combine(new[] {newDirectoryName, Path.GetFileName(FilePath)});
+
+            Logger.Instance.LogInfo("Renamed '" + Title + "' - Path: '" + oldDirectoryName + "' -> '" +
+                                     newDirectoryName + "'.");
+            
+            return true;
         }
 
         protected bool TryGetValueForProperty(string property, out string value) {
