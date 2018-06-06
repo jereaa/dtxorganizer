@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace DTXOrganizer {
@@ -30,6 +28,8 @@ namespace DTXOrganizer {
                         if (defFile.ProperlyInitialized) {
 //                            Logger.Instance.LogInfo(defFile.Title);
 //                            defFile.LogDTXLevels();
+                            defFile.FindProblems(true);
+                            
                             if (!Path.GetFileName(Path.GetFileName(defFile.FilePath)).Equals(defFile.Title)) {
                                 defFile.RenameSongFolderToTitle();
                             }

@@ -74,5 +74,9 @@ namespace DTXOrganizer {
 
             return Level.CompareTo(other.Level);
         }
+
+        public override void FindProblems(bool autoFix) {
+            throw new NotImplementedException();
+        }
     }
 }

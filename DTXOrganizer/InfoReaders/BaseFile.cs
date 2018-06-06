@@ -157,14 +157,45 @@ namespace DTXOrganizer {
             return counter;
         }
 
-        protected void SaveFile() {
+        protected bool SaveFile() {
+            bool couldSave = false;
             try {
                 File.WriteAllText(FilePath, rawValue, Encoding.GetEncoding("shift_jis"));
+                couldSave = true;
             } catch (Exception e) {
                 Logger.Instance.LogError("Couldn't create file for song '" + Title + "' in '" + FilePath + "'");
                 Logger.Instance.LogError(e.ToString());
             }
+
+            return couldSave;
         }
+
+        protected bool DeleteProperty(string propertyName) {
+            int propertyIndex = rawValue.IndexOf(propertyName, StringComparison.Ordinal);
+
+            if (propertyIndex == -1) {
+                Logger.Instance.LogError($"Couldn't find property '{propertyName}' in file '{FilePath}'.");
+                return false;
+            }
+            
+            int previousLineBreakIndex = rawValue.LastIndexOf('\n', propertyIndex);
+            int nextLineBreakIndex = rawValue.IndexOf('\n', propertyIndex);
+
+            if (nextLineBreakIndex == -1) {
+                rawValue = rawValue.Remove(previousLineBreakIndex + 1, rawValue.Length - previousLineBreakIndex);
+            } else {
+                rawValue = rawValue.Remove(previousLineBreakIndex + 1, nextLineBreakIndex - previousLineBreakIndex);
+            }
+
+            if (!SaveFile()) {
+                Logger.Instance.LogError(
+                    $"Removed property '{propertyName}' but couldn't save file afterwards. File: '{FilePath}'");
+            }
+
+            return true;
+        }
+        
+        public abstract void FindProblems(bool autoFix);
 
     }
 }

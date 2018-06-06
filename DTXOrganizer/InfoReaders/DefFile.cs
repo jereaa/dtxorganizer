@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -28,8 +29,7 @@ namespace DTXOrganizer {
                 return;
             }
 
-            //TODO we should also look in subfolders here
-            foreach (string file in Directory.EnumerateFiles(Path.GetDirectoryName(path), "*.dtx")) {
+            foreach (string file in Directory.GetFiles(Path.GetDirectoryName(path), "*.dtx", SearchOption.AllDirectories)) {
                 DTXFile dtxFile = new DTXFile(file);
                 if (dtxFile.ProperlyInitialized) {
                     _dtxFiles.Add(dtxFile);
@@ -47,17 +47,23 @@ namespace DTXOrganizer {
             if (getTitleFromDtx) {
                 if (TryChangeValueForProperty(TITLE_PROPERTY, _dtxFiles[0].Title)) {
                     Title = _dtxFiles[0].Title;
-                    SaveFile();
+                    if (!SaveFile()) {
+                        Logger.Instance.LogError($"Couldn't save file '{FilePath}' after setting title to '{Title}'");
+                    }
                 }
             }
 
             SortDTXFileListByLevel();
             string newInfo = "\r\n";
+            Uri defFileUri = new Uri(FilePath);
 
             for (int i = 0; i < DTX_LABELS.Length; i++) {
                 if (_dtxFiles[i] != null) {
+                    Uri dtxFileUri = new Uri(_dtxFiles[i].FilePath);
                     newInfo += string.Format(PROPERTY_LABEL_PRE + DTX_LABELS[i] + "\r\n", i + 1);
-                    newInfo += string.Format(PROPERTY_FILE_PRE + Path.GetFileName(_dtxFiles[i].FilePath) + "\r\n\r\n", i + 1);
+                    newInfo += string.Format(
+                        PROPERTY_FILE_PRE + defFileUri.MakeRelativeUri(dtxFileUri).ToString().Replace('/', '\\') +
+                        "\r\n\r\n", i + 1);
                 }
             }
 
@@ -78,9 +84,6 @@ namespace DTXOrganizer {
                 DTXFile dtxFile = new DTXFile(Path.Combine(new [] {Path.GetDirectoryName(FilePath), file}));
                 if (dtxFile.ProperlyInitialized) {
                     _dtxFiles.Add(dtxFile);
-                } else {
-                    Logger.Instance.LogWarning("DTX file '" + file + "' not found for '" + Title + "' in folder '" +
-                                               Path.GetDirectoryName(FilePath) + "'.");
                 }
             }
             
@@ -127,7 +130,66 @@ namespace DTXOrganizer {
             return true;
         }
 
-#region Debug
+        public override void FindProblems(bool autoFix) {
+            Regex regex = new Regex(@"(?<prop>#L(?<num>\d)FILE\s*:?)\s*(?<file>[^.]*\.dtx)\s*\n?");
+            MatchCollection matches = regex.Matches(rawValue);
+
+            using (UserPrompt userPrompt = new UserPrompt()) {
+                
+                foreach (Match match in matches) {
+                    string file = match.Groups["file"].Value;
+                    string filePath = Path.Combine(new[] {Path.GetDirectoryName(FilePath), file});
+    
+                    if (!File.Exists(filePath)) {
+                        Logger.Instance.LogError($"Couldn't find file '{Path.GetFileName(filePath)}' in '{filePath}'.");
+    
+                        if (autoFix) {
+                            // Get all DTX Files in song directory (including subdirectories)
+                            List<string> dtxFiles = Directory.GetFiles(Path.GetDirectoryName(FilePath), "*.dtx",
+                                SearchOption.AllDirectories).ToList();
+                            // Remove all DTX Files which are already initialized (since they were found)
+                            dtxFiles.RemoveAll(dtxFilePath => _dtxFiles.Exists(file1 => file1.FilePath == dtxFilePath));
+
+                            if (dtxFiles.Count != 0) {
+                                // Make paths relative to Def file.
+                                string[] unbindedDtxFiles = dtxFiles.Select(fullPath =>
+                                    fullPath.Replace(Path.GetDirectoryName(FilePath) + "\\", "")).ToArray();
+                                
+                                string propertyName = match.Groups["prop"].Value;
+                                string prompt = $"Please select appropiate file for '{propertyName}' property:";
+                                int fileIndex = userPrompt.PromptUserForChoice(prompt, unbindedDtxFiles);
+                                
+                                if (TryChangeValueForProperty(propertyName, unbindedDtxFiles[fileIndex])) {
+                                    
+                                    DTXFile dtxFile = new DTXFile(Path.Combine(Path.GetDirectoryName(FilePath),
+                                        unbindedDtxFiles[fileIndex]));
+                                    
+                                    if (dtxFile.ProperlyInitialized) {
+                                        _dtxFiles.Add(dtxFile);
+                                        SaveFile();
+                                        Logger.Instance.LogInfo(
+                                            $"Changed property '{propertyName}' from '{file}' to '{unbindedDtxFiles[fileIndex]}' in file '{FilePath}'");
+                                    }
+                                } else {
+                                    Logger.Instance.LogError(
+                                        $"Couldn't change property '{propertyName}' from '{file}' to '{unbindedDtxFiles[fileIndex]}' in file {Title}.");
+                                }
+                            } else {
+                                int numToDelete = int.Parse(match.Groups["num"].Value);
+                                DeleteDtxFromDefinition(numToDelete);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void DeleteDtxFromDefinition(int dtxNum) {
+            DeleteProperty(string.Format(PROPERTY_LABEL_PRE, dtxNum));
+            DeleteProperty(string.Format(PROPERTY_FILE_PRE, dtxNum));
+        }
+
+        #region Debug
 
         public void LogDTXList() {
             foreach (DTXFile dtxFile in _dtxFiles) {
