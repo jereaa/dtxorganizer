@@ -13,43 +13,43 @@ namespace DTXOrganizer {
             string pathToFiles = jObject["path"].ToString();
 
             string[] directories = Directory.GetDirectories(pathToFiles);
-            
-            ProgressBar progressBar = new ProgressBar();
+
             Console.Write("Going over directories... ");
-            progressBar.Report(0);
-            
-            for (int i = 0; i < directories.Length; i++) {
-                bool foundFile = false;
+            using (ProgressBar progressBar = new ProgressBar()) {
                 
-                foreach (string file in Directory.GetFiles(directories[i])) {
-                    if (Path.GetFileName(file)?.ToLower() == "set.def") {
-                        foundFile = true;
-                        DefFile defFile = new DefFile(file);
-                        if (defFile.ProperlyInitialized) {
-//                            Logger.Instance.LogInfo(defFile.Title);
-//                            defFile.LogDTXLevels();
-                            defFile.FindProblems(true);
-                            
-                            if (!Path.GetFileName(Path.GetFileName(defFile.FilePath)).Equals(defFile.Title)) {
-                                defFile.RenameSongFolderToTitle();
-                            }
+                Console.Write("\n");
+                for (int i = 0; i < directories.Length; i++) {
+                    bool foundFile = false;
+    
+                    DefFile defFile = new DefFile();
+                    foreach (string file in Directory.GetFiles(directories[i])) {
+                        if (Path.GetFileName(file).ToLower() == "set.def") {
+                            foundFile = true;
+                            defFile = new DefFile(file);
+                            break;
                         }
-
-                        break;
                     }
+    
+                    if (!foundFile) {
+                        Logger.Instance.LogWarning("Couldn't find file SET.DEF in folder '" +
+                                                 Path.GetFileName(directories[i]) + "'");
+                        defFile = new DefFile(Path.GetFileName(directories[i]),
+                            Path.Combine(new[] {directories[i], "SET.def"}));
+                    }
+                    
+                    if (defFile.ProperlyInitialized) {
+    //                    Logger.Instance.LogInfo(defFile.Title);
+    //                    defFile.LogDTXLevels();
+                        defFile.FindProblems(true);
+                                
+                        if (!Path.GetFileName(Path.GetFileName(defFile.FilePath)).Equals(defFile.Title)) {
+                            defFile.RenameSongFolderToTitle();
+                        }
+                    }
+                    
+                    progressBar.Report((double) i / directories.Length);
                 }
-
-                if (!foundFile) {
-                    Logger.Instance.LogError("Couldn't find file SET.DEF in folder '" +
-                                             Path.GetFileName(directories[i]) + "'");
-                    DefFile newDefFile = new DefFile(Path.GetFileName(directories[i]),
-                        Path.Combine(new[] {directories[i], "SET.def"}));
-                }
-                
-                progressBar.Report((double) i / directories.Length);
             }
-            progressBar.Dispose();
-            
             Console.WriteLine("");
         }
 

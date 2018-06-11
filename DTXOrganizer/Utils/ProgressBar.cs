@@ -10,12 +10,15 @@ public class ProgressBar : IDisposable, IProgress<double> {
 	private readonly TimeSpan animationInterval = TimeSpan.FromSeconds(1.0 / 8);
 	private const string animation = @"|/-\";
 
-	private readonly Timer timer;
+	private Timer timer;
 
-	private double currentProgress = 0;
+	private double currentProgress;
 	private string currentText = string.Empty;
-	private bool disposed = false;
-	private int animationIndex = 0;
+	private bool disposed;
+	private int animationIndex;
+
+	private int cursorTop;
+	private int cursorLeft;
 
 	public ProgressBar() {
 		timer = new Timer(TimerHandler);
@@ -26,6 +29,8 @@ public class ProgressBar : IDisposable, IProgress<double> {
 		if (!Console.IsOutputRedirected) {
 			ResetTimer();
 		}
+		
+		TimerHandler(null);
 	}
 
 	public void Report(double value) {
@@ -51,6 +56,7 @@ public class ProgressBar : IDisposable, IProgress<double> {
 	}
 
 	private void UpdateText(string text) {
+		
 		// Get length of common portion
 		int commonPrefixLength = 0;
 		int commonLength = Math.Min(currentText.Length, text.Length);
@@ -72,7 +78,21 @@ public class ProgressBar : IDisposable, IProgress<double> {
 			outputBuilder.Append('\b', overlapCount);
 		}
 
+		int currentCursorLeft = Console.CursorLeft;
+		int currentCursorTop = Console.CursorTop;
+		
+		if (!currentText.Equals(String.Empty)) {
+			Console.SetCursorPosition(cursorLeft, cursorTop);
+		}
+		
 		Console.Write(outputBuilder);
+		cursorLeft = Console.CursorLeft;
+		cursorTop = Console.CursorTop;
+
+		if (!currentText.Equals(string.Empty)) {
+			Console.SetCursorPosition(currentCursorLeft, currentCursorTop);
+		}
+		
 		currentText = text;
 	}
 
@@ -83,7 +103,7 @@ public class ProgressBar : IDisposable, IProgress<double> {
 	public void Dispose() {
 		lock (timer) {
 			disposed = true;
-			UpdateText(string.Empty);
+			UpdateText("DONE");
 		}
 	}
 

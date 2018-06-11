@@ -16,6 +16,10 @@ namespace DTXOrganizer {
 
         private readonly List<DTXFile> _dtxFiles = new List<DTXFile>();
 
+        public DefFile() {
+            
+        }
+        
         public DefFile(string path) : base(path) {
             if (!ProperlyInitialized) {
                 return;
@@ -30,7 +34,7 @@ namespace DTXOrganizer {
             }
 
             foreach (string file in Directory.GetFiles(Path.GetDirectoryName(path), "*.dtx", SearchOption.AllDirectories)) {
-                DTXFile dtxFile = new DTXFile(file);
+                DTXFile dtxFile = new DTXFile(file, Path.GetDirectoryName(FilePath));
                 if (dtxFile.ProperlyInitialized) {
                     _dtxFiles.Add(dtxFile);
                 }
@@ -62,7 +66,7 @@ namespace DTXOrganizer {
                     Uri dtxFileUri = new Uri(_dtxFiles[i].FilePath);
                     newInfo += string.Format(PROPERTY_LABEL_PRE + DTX_LABELS[i] + "\r\n", i + 1);
                     newInfo += string.Format(
-                        PROPERTY_FILE_PRE + defFileUri.MakeRelativeUri(dtxFileUri).ToString().Replace('/', '\\') +
+                        PROPERTY_FILE_PRE + defFileUri.MakeRelativeUri(dtxFileUri).ToString().Replace('/', Path.DirectorySeparatorChar) +
                         "\r\n\r\n", i + 1);
                 }
             }
@@ -71,7 +75,7 @@ namespace DTXOrganizer {
             File.AppendAllText(FilePath, newInfo, Encoding.GetEncoding("shift_jis"));
             _dtxFiles.RemoveAll(file => file == null);
             
-            Logger.Instance.LogInfo("Created new SET.DEF file for '" + title + "' in '" + Path.GetDirectoryName(path) + "'.");
+            Logger.Instance.LogInfo("Created new SET.DEF file for '" + Title + "' in '" + Path.GetDirectoryName(path) + "'.");
         }
 
         private void InitializeDtxFiles() {
@@ -81,7 +85,7 @@ namespace DTXOrganizer {
             foreach (Match match in matches) {
                 string file = match.Groups["file"].Value;
 
-                DTXFile dtxFile = new DTXFile(Path.Combine(new [] {Path.GetDirectoryName(FilePath), file}));
+                DTXFile dtxFile = new DTXFile(Path.Combine(new [] {Path.GetDirectoryName(FilePath), file}), Path.GetDirectoryName(FilePath));
                 if (dtxFile.ProperlyInitialized) {
                     _dtxFiles.Add(dtxFile);
                 }
@@ -131,7 +135,7 @@ namespace DTXOrganizer {
         }
 
         public override void FindProblems(bool autoFix) {
-            Regex regex = new Regex(@"(?<prop>#L(?<num>\d)FILE\s*:?)\s*(?<file>[^.]*\.dtx)\s*\n?");
+            Regex regex = new Regex(@"(?<prop>#L(?<num>\d)FILE\s*:?)\s*(?<file>[^.]*\.dtx)");
             MatchCollection matches = regex.Matches(rawValue);
 
             using (UserPrompt userPrompt = new UserPrompt()) {
@@ -141,9 +145,12 @@ namespace DTXOrganizer {
                     string filePath = Path.Combine(new[] {Path.GetDirectoryName(FilePath), file});
     
                     if (!File.Exists(filePath)) {
-                        Logger.Instance.LogError($"Couldn't find file '{Path.GetFileName(filePath)}' in '{filePath}'.");
-    
-                        if (autoFix) {
+
+                        if (!autoFix) {
+                            Logger.Instance.LogWarning($"Couldn't find file '{Path.GetFileName(filePath)}' in '{filePath}'.");
+                            
+                        } else {
+                            
                             // Get all DTX Files in song directory (including subdirectories)
                             List<string> dtxFiles = Directory.GetFiles(Path.GetDirectoryName(FilePath), "*.dtx",
                                 SearchOption.AllDirectories).ToList();
@@ -156,13 +163,19 @@ namespace DTXOrganizer {
                                     fullPath.Replace(Path.GetDirectoryName(FilePath) + "\\", "")).ToArray();
                                 
                                 string propertyName = match.Groups["prop"].Value;
-                                string prompt = $"Please select appropiate file for '{propertyName}' property:";
-                                int fileIndex = userPrompt.PromptUserForChoice(prompt, unbindedDtxFiles);
+                                string prompt = $"\n\nPlease select appropiate file for '{propertyName}' property in song '{Title}':";
                                 
+                                int fileIndex = userPrompt.PromptUserForChoice(prompt, unbindedDtxFiles, file, true, false);
+
+                                // If user chose to leave the value as it already was
+                                if (fileIndex == unbindedDtxFiles.Length) {
+                                    continue;
+                                }
+
                                 if (TryChangeValueForProperty(propertyName, unbindedDtxFiles[fileIndex])) {
                                     
                                     DTXFile dtxFile = new DTXFile(Path.Combine(Path.GetDirectoryName(FilePath),
-                                        unbindedDtxFiles[fileIndex]));
+                                        unbindedDtxFiles[fileIndex]), Path.GetDirectoryName(FilePath));
                                     
                                     if (dtxFile.ProperlyInitialized) {
                                         _dtxFiles.Add(dtxFile);
@@ -181,6 +194,10 @@ namespace DTXOrganizer {
                         }
                     }
                 }
+            }
+
+            foreach (DTXFile dtxFile in _dtxFiles) {
+                dtxFile.FindProblems(autoFix);
             }
         }
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace DTXOrganizer {
@@ -10,7 +12,7 @@ namespace DTXOrganizer {
             
             Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-GB");
             Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture("en-GB");
-            
+
             Organizer organizer = new Organizer();
             organizer.ListTitles();
 

@@ -6,11 +6,11 @@
 * Create `SET.def` files when they are missing by using `.dtx` files.
 * Change song directory name
 * Progress bar.
+* Detect & fix broken links to files from `.dtx` files.
 
 ## Pending
 
-* Detect & fix broken links to files from `.dtx` files.
 * Detect newly added songs (need DB).
 * Grouping of songs by criteria (first letter name) and change their directories.
 * Export songs data to spreadsheet and wishfully be able to modify data from spreadsheet (sort of sync).
-* Argument parser to indicate actions to take (instead of modifying the code ugh).
+* Present menu on program start and let user choose what to do based on options.

@@ -15,6 +15,10 @@ namespace DTXOrganizer {
         
         public string Title { get; protected set; }
 
+        protected BaseFile() {
+            ProperlyInitialized = false;
+        }
+        
         /// <summary>
         /// Create file instance from real file
         /// </summary>
@@ -187,12 +191,14 @@ namespace DTXOrganizer {
                 rawValue = rawValue.Remove(previousLineBreakIndex + 1, nextLineBreakIndex - previousLineBreakIndex);
             }
 
-            if (!SaveFile()) {
-                Logger.Instance.LogError(
-                    $"Removed property '{propertyName}' but couldn't save file afterwards. File: '{FilePath}'");
+            if (SaveFile()) {
+                return true;
             }
-
-            return true;
+            
+            Logger.Instance.LogError(
+                $"Removed property '{propertyName}' but couldn't save file afterwards. File: '{FilePath}'");
+            
+            return false;
         }
         
         public abstract void FindProblems(bool autoFix);
