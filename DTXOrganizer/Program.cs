@@ -14,7 +14,7 @@ namespace DTXOrganizer {
             Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture("en-GB");
 
             Organizer organizer = new Organizer();
-            organizer.ListTitles();
+            organizer.Start();
 
             Logger logger = Logger.Instance;
             Console.WriteLine("Program finished with: \n" +

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace DTXOrganizer {
     
@@ -34,7 +35,7 @@ namespace DTXOrganizer {
                     rawValue = File.ReadAllText(path, Encoding.Unicode);
 
                     if (!rawValue.Contains(TITLE_PROPERTY)) {
-                        Logger.Instance.LogWarning("Couldn't read TITLE property in file '" + Path.GetFileName(path) + "'");
+                        Logger.Instance.LogWarning("Couldn't read TITLE property in file '" + path + "'");
                         return;
                     }
                 }
@@ -93,7 +94,12 @@ namespace DTXOrganizer {
             if (Path.GetFileName(Path.GetDirectoryName(FilePath)).Equals(newDirName)) {
                 return true;
             }
-            
+
+            Match m = new Regex($"{newDirName}_\\d+$").Match(Path.GetDirectoryName(FilePath));
+            if (m.Success) {
+                return true;
+            }
+
             string oldDirectoryName = Path.GetDirectoryName(FilePath);
             string newDirectoryName =
                 Path.Combine(new[] {Path.GetDirectoryName(Path.GetDirectoryName(FilePath)), newDirName});
@@ -104,7 +110,31 @@ namespace DTXOrganizer {
                 return false;
             }
             
-            Directory.Move(oldDirectoryName, newDirectoryName);
+            try {
+                Directory.Move(oldDirectoryName, newDirectoryName);
+            }
+            catch (Exception e) {
+                if (e is IOException) {
+                    try {
+                        Directory.Move(oldDirectoryName, newDirectoryName + "_2");
+                    }
+                    catch (Exception exception) {
+                        if (e is IOException) {
+                            int highestNum = 0;
+                            foreach (string dir in Directory.GetDirectories(Path.GetDirectoryName(newDirectoryName))) {
+                                Regex regex = new Regex(@"_(?<num>\d+)$");
+                                Match match = regex.Match(dir);
+                                if (match.Success) {
+                                    int dirNum = int.Parse(match.Groups["num"].Value);
+                                    highestNum = dirNum > highestNum ? dirNum : highestNum;
+                                }
+                            }
+                            
+                            Directory.Move(oldDirectoryName, newDirectoryName + "_" + highestNum + 1);
+                        }
+                    }
+                }
+            }
             FilePath = Path.Combine(new[] {newDirectoryName, Path.GetFileName(FilePath)});
 
             Logger.Instance.LogInfo("Renamed '" + Title + "' - Path: '" + oldDirectoryName + "' -> '" +
