@@ -8,9 +8,9 @@
 * Progress bar.
 * Detect & fix broken links to files from `.dtx` files.
 * Present menu on program start and let user choose what to do based on options.
+* Grouping of songs by criteria (first letter name) and change their directories. (Only by their name for now)
 
 ## Pending
 
 * Detect newly added songs (need DB).
-* Grouping of songs by criteria (first letter name) and change their directories.
 * Export songs data to spreadsheet and wishfully be able to modify data from spreadsheet (sort of sync).
