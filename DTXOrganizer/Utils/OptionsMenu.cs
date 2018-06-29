@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 public class OptionsMenu {
     
@@ -19,14 +20,12 @@ public class OptionsMenu {
         });
     }
 
-    public void DisplayMenu() {
+    public void DisplayMenu(string prompt) {
         if (_menuOptions.Count == 0) {
             return;
         }
         
-        Console.Clear();
-
-        Console.WriteLine("Please select an option...");
+        Console.WriteLine(prompt);
         _consoleBufferTopStart = Console.CursorTop;
         
         for (int i = 0 ; i < _menuOptions.Count ; i++) {
@@ -45,8 +44,15 @@ public class OptionsMenu {
 
             keyPressed = Console.ReadKey(true);
         }
+
+        Console.CursorTop = _consoleBufferTopStart - 1;
+        Console.CursorLeft = 0;
+        StringBuilder sb = new StringBuilder((_menuOptions.Count + 1) * Console.BufferWidth);
+        sb.Append(' ', (_menuOptions.Count + 1) * Console.BufferWidth);
+        Console.WriteLine(sb);
+        sb.Clear();
+        Console.CursorTop = _consoleBufferTopStart - 1;
         
-        Console.Clear();
         _menuOptions[_currentHighlightedOption].OnSelected();
     }
 

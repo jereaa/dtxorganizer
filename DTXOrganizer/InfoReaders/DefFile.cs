@@ -49,7 +49,7 @@ namespace DTXOrganizer {
             _dtxFiles.Sort();
 
             if (getTitleFromDtx) {
-                if (TryChangeValueForProperty(TITLE_PROPERTY, _dtxFiles[0].Title)) {
+                if (TryChangeValueForProperty(PROPERTY_TITLE, _dtxFiles[0].Title)) {
                     Title = _dtxFiles[0].Title;
                     if (!SaveFile()) {
                         Logger.Instance.LogError($"Couldn't save file '{FilePath}' after setting title to '{Title}'");

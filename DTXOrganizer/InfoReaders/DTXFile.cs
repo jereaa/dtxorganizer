@@ -9,21 +9,17 @@ namespace DTXOrganizer {
     public class DTXFile : BaseFile, IComparable<DTXFile> {
 
 #region Constants
-        private static readonly string PROPERTY_ARTIST = "#ARTIST";
-        private static readonly string PROPERTY_LEVEL = "#DLEVEL";
-        private static readonly string PROPERTY_COMMENT = "#COMMENT";
-        private static readonly string PROPERTY_PREVIEW = "#PREVIEW";
-        private static readonly string PROPERTY_PREIMAGE = "#PREIMAGE";
-        private static readonly string PROPERTY_RESULTIMAGE = "#RESULTIMAGE";
-        private static readonly string PROPERTY_BPM = "#BPM";
+        private const string PROPERTY_LEVEL = "#DLEVEL";
+        private const string PROPERTY_RESULTIMAGE = "#RESULTIMAGE";
+        private const string PROPERTY_BPM = "#BPM";
         
-        private static readonly string REGEX_AVI = @"(?<prop>#AVI\w{2}\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
-        private static readonly string REGEX_WAV = @"(?<prop>#WAV\w{2}\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{2,3}))";
-        private static readonly string REGEX_PREVIEW = @"(?<prop>#PREVIEW\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{2,3}))";
-        private static readonly string REGEX_PREMOVIE = @"(?<prop>#PREMOVIE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
-        private static readonly string REGEX_PREIMAGE = @"(?<prop>#PREIMAGE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
-        private static readonly string REGEX_RESULTIMAGE = @"(?<prop>#RESULTIMAGE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
-        private static readonly string REGEX_STAGEFILE = @"(?<prop>#STAGEFILE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
+        private const string REGEX_AVI = @"(?<prop>#AVI\w{2}\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
+        private const string REGEX_WAV = @"(?<prop>#WAV\w{2}\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{2,3}))";
+        private const string REGEX_PREVIEW = @"(?<prop>#PREVIEW\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{2,3}))";
+        private const string REGEX_PREMOVIE = @"(?<prop>#PREMOVIE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
+        private const string REGEX_PREIMAGE = @"(?<prop>#PREIMAGE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
+        private const string REGEX_RESULTIMAGE = @"(?<prop>#RESULTIMAGE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
+        private const string REGEX_STAGEFILE = @"(?<prop>#STAGEFILE\s*:?)\s*(?<file>[^.]*\.(?<ext>\w{3}))";
 #endregion
         
         public string SongDirPath { get; }

@@ -7,7 +7,14 @@ namespace DTXOrganizer {
     
     public abstract class BaseFile {
         
-        protected static readonly string TITLE_PROPERTY = "#TITLE";
+#region Constants
+        protected const string PROPERTY_TITLE = "#TITLE";
+        protected const string PROPERTY_ARTIST = "#ARTIST";
+        protected const string PROPERTY_COMMENT = "#COMMENT";
+        protected const string PROPERTY_PREVIEW = "#PREVIEW";
+        protected const string PROPERTY_PREIMAGE = "#PREIMAGE";
+        protected const string PROPERTY_FONTCOLOR = "#FONTCOLOR";
+#endregion
 
         public bool ProperlyInitialized { get; protected set; }
         
@@ -31,17 +38,17 @@ namespace DTXOrganizer {
             try {
                 rawValue = File.ReadAllText(path, Encoding.GetEncoding("shift_jis"));
 
-                if (!rawValue.Contains(TITLE_PROPERTY)) {
+                if (!rawValue.Contains(PROPERTY_TITLE)) {
                     rawValue = File.ReadAllText(path, Encoding.Unicode);
 
-                    if (!rawValue.Contains(TITLE_PROPERTY)) {
+                    if (!rawValue.Contains(PROPERTY_TITLE)) {
                         Logger.Instance.LogWarning("Couldn't read TITLE property in file '" + path + "'");
                         return;
                     }
                 }
 
                 ProperlyInitialized = true;
-                TryGetValueForProperty(TITLE_PROPERTY, out string title);
+                TryGetValueForProperty(PROPERTY_TITLE, out string title);
                 Title = title.Trim();
 
             } catch (Exception e) {
@@ -63,7 +70,7 @@ namespace DTXOrganizer {
             Title = title;
             ProperlyInitialized = false;
             rawValue = "; File created with Jere's DTXOrganizer\r\n\r\n" +
-                       TITLE_PROPERTY + ": " + title + "\r\n";
+                       PROPERTY_TITLE + ": " + title + "\r\n";
 
             try {
                 File.WriteAllText(path, rawValue, Encoding.GetEncoding("shift_jis"));
@@ -151,7 +158,11 @@ namespace DTXOrganizer {
             }
 
             int endIndex = rawValue.IndexOfAny(new []{'\r', '\n'}, valueStartIndex);
-            value = rawValue.Substring(valueStartIndex, endIndex - valueStartIndex);
+
+            value = endIndex == -1
+                ? rawValue.Substring(valueStartIndex)
+                : rawValue.Substring(valueStartIndex, endIndex - valueStartIndex);
+            
             return true;
         }
 
@@ -229,6 +240,11 @@ namespace DTXOrganizer {
                 $"Removed property '{propertyName}' but couldn't save file afterwards. File: '{FilePath}'");
             
             return false;
+        }
+
+        //TODO Pls change this with setter in properties
+        public void ChangeTitle(string newTitle) {
+            TryChangeValueForProperty(PROPERTY_TITLE, newTitle);
         }
         
         public abstract void FindProblems(bool autoFix);
